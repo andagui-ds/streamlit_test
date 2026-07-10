@@ -12,8 +12,10 @@ if 'df_experiment_results' not in st.session_state:
 
 st.header('Lanzar una moneda')
 
-# CORRECCIÓN 1: Inicializamos el gráfico pasándole un DataFrame explícito con nombre de columna
-chart = st.line_chart(pd.DataFrame([0.5], columns=['Media']))
+# Creamos un contenedor vacío donde se va a renderizar y actualizar el gráfico
+chart_placeholder = st.empty()
+# Lo inicializamos mostrando la media inicial
+chart_placeholder.line_chart(pd.DataFrame([0.5], columns=['Media']))
 
 def toss_coin(n):
     trial_outcomes = scipy.stats.bernoulli.rvs(p=0.5, size=n)
@@ -21,6 +23,9 @@ def toss_coin(n):
     mean = None
     outcome_no = 0
     outcome_1_count = 0
+    
+    # Creamos una lista para ir guardando el historial de medias de este intento
+    history = [0.5]
 
     for r in trial_outcomes:
         outcome_no += 1
@@ -28,8 +33,11 @@ def toss_coin(n):
             outcome_1_count += 1
         mean = outcome_1_count / outcome_no
         
-        # CORRECCIÓN 2: Pasamos el nuevo dato dentro de un DataFrame con la misma columna
-        chart.add_rows(pd.DataFrame([mean], columns=['Media']))
+        # Agregamos la nueva media a nuestra lista de historial
+        history.append(mean)
+        
+        # Redibujamos el gráfico completo en el contenedor vacío con los datos actualizados
+        chart_placeholder.line_chart(pd.DataFrame(history, columns=['Media']))
         time.sleep(0.05)
 
     return mean
@@ -42,7 +50,7 @@ if start_button:
     st.session_state['experiment_no'] += 1
     mean = toss_coin(number_of_trials)
     
-    # Guardamos en el historial
+    # Guardamos en el historial global
     st.session_state['df_experiment_results'] = pd.concat([
         st.session_state['df_experiment_results'],
         pd.DataFrame(data=[[st.session_state['experiment_no'],
